@@ -1,0 +1,786 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><base href="https://d16ilfvy4mv02r.cloudfront.net/workspaces/HN3H5OaPzQaVNzFaHjPvXYNc29kTtcT7/19a06010-220d-4d0b-b2d6-203123ecc40c/files/">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MoodMeal AI</title>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #18181f;
+    --surface2: #22222c;
+    --surface3: #2a2a36;
+    --border: #32323f;
+    --text: #f0f0f5;
+    --muted: #8888a0;
+    --accent: #a78bfa;
+    --accent2: #818cf8;
+    --accent3: #38bdf8;
+    --green: #34d399;
+    --pink: #f472b6;
+    --orange: #fb923c;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── Background Blobs ─── */
+  .bg-blob {
+    position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.15; pointer-events: none; z-index: 0;
+  }
+  .blob1 { width: 500px; height: 500px; background: var(--accent); top: -100px; left: -100px; }
+  .blob2 { width: 400px; height: 400px; background: var(--accent3); bottom: -80px; right: -80px; }
+  .blob3 { width: 300px; height: 300px; background: var(--pink); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+  /* ─── Layout ─── */
+  .app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* ─── Header ─── */
+  .header { text-align: center; padding: 48px 0 40px; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 50px; padding: 8px 20px; margin-bottom: 24px; font-size: 13px; color: var(--accent); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600; }
+  .header h1 { font-size: clamp(32px, 6vw, 52px); font-weight: 800; background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent3) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.15; margin-bottom: 16px; }
+  .header p { color: var(--muted); font-size: 17px; max-width: 500px; margin: 0 auto; line-height: 1.6; }
+
+  /* ─── Premium Banner ─── */
+  .premium-banner {
+    background: linear-gradient(135deg, #7c3aed20 0%, #06b6d420 100%);
+    border: 1px solid #7c3aed40;
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .premium-banner .left { display: flex; align-items: center; gap: 10px; }
+  .premium-icon { font-size: 22px; }
+  .premium-text strong { display: block; font-size: 14px; color: var(--accent); }
+  .premium-text span { font-size: 12px; color: var(--muted); }
+  .btn-premium { background: linear-gradient(135deg, var(--accent), var(--accent3)); color: white; border: none; padding: 9px 20px; border-radius: 50px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.2s, transform 0.2s; }
+  .btn-premium:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  /* ─── Section Labels ─── */
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+
+  /* ─── Mood Grid ─── */
+  .mood-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 36px; }
+  @media (max-width: 600px) { .mood-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 400px) { .mood-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .mood-btn {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .mood-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.25s;
+    border-radius: var(--radius);
+  }
+  .mood-btn:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .mood-btn.active { border-color: var(--accent); background: var(--surface2); }
+  .mood-btn.active::before { opacity: 1; }
+  .mood-emoji { font-size: 32px; display: block; margin-bottom: 8px; transition: transform 0.25s; }
+  .mood-btn:hover .mood-emoji, .mood-btn.active .mood-emoji { transform: scale(1.15); }
+  .mood-label { font-size: 12px; font-weight: 600; color: var(--muted); transition: color 0.25s; }
+  .mood-btn.active .mood-label { color: var(--text); }
+  .mood-glow { position: absolute; inset: -2px; border-radius: var(--radius); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+  .mood-btn.active .mood-glow { opacity: 1; }
+
+  /* Mood colors */
+  .mood-btn[data-mood="tired"].active { border-color: var(--yellow); background: #fbbf2410; }
+  .mood-btn[data-mood="tired"].active .mood-label { color: var(--yellow); }
+  .mood-btn[data-mood="bloated"].active { border-color: var(--green); background: #34d39910; }
+  .mood-btn[data-mood="bloated"].active .mood-label { color: var(--green); }
+  .mood-btn[data-mood="sad"].active { border-color: #60a5fa; background: #60a5fa10; }
+  .mood-btn[data-mood="sad"].active .mood-label { color: #60a5fa; }
+  .mood-btn[data-mood="energetic"].active { border-color: var(--orange); background: #fb923c10; }
+  .mood-btn[data-mood="energetic"].active .mood-label { color: var(--orange); }
+  .mood-btn[data-mood="unmotivated"].active { border-color: var(--pink); background: #f472b610; }
+  .mood-btn[data-mood="unmotivated"].active .mood-label { color: var(--pink); }
+
+  /* ─── CTA Button ─── */
+  .cta-wrap { text-align: center; margin-bottom: 40px; }
+  .btn-generate {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent3) 100%);
+    color: white; border: none; padding: 16px 40px; border-radius: 50px; font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 24px rgba(167,139,250,0.35);
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(167,139,250,0.5); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-generate .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
+  .btn-generate.loading .spinner { display: block; }
+  .btn-generate.loading .btn-text { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes shimmer { from { background-position: -200% center; } to { background-position: 200% center; } }
+
+  /* ─── Tabs ─── */
+  .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 4px; margin-bottom: 28px; width: fit-content; }
+  .tab-btn { padding: 9px 22px; border: none; border-radius: 50px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: var(--muted); transition: all 0.2s; }
+  .tab-btn.active { background: var(--accent); color: white; }
+
+  /* ─── Meal Cards ─── */
+  .meals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; margin-bottom: 32px; }
+  .meal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.3s;
+    animation: fadeInUp 0.5s ease both;
+    position: relative;
+  }
+  .meal-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  .meal-img { width: 100%; height: 160px; object-fit: cover; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 60px; position: relative; }
+  .meal-img-bg { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 64px; }
+  .meal-badge { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); border-radius: 50px; padding: 4px 12px; font-size: 11px; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); }
+  .meal-body { padding: 18px; }
+  .meal-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .meal-why { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; padding: 10px 12px; background: var(--surface2); border-radius: var(--radius-sm); border-left: 3px solid var(--accent); }
+  .meal-why strong { color: var(--accent); }
+  .meal-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .meal-tag { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 50px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  .meal-actions { display: flex; gap: 8px; }
+  .btn-fav { flex: 0 0 auto; background: var(--surface2); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: var(--radius-sm); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .btn-fav:hover, .btn-fav.saved { background: #f472b620; border-color: var(--pink); }
+  .btn-view { flex: 1; background: var(--surface2); border: 1px solid var(--border); padding: 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text); transition: all 0.2s; }
+  .btn-view:hover { background: var(--accent); border-color: var(--accent); }
+
+  /* ─── Daily Plan ─── */
+  .daily-plan { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+  .plan-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .plan-row:last-child { border-bottom: none; }
+  .plan-time { min-width: 80px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding-top: 2px; }
+  .plan-meal { flex: 1; }
+  .plan-meal-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .plan-meal-desc { font-size: 12px; color: var(--muted); }
+  .plan-emoji { font-size: 32px; }
+  .plan-cals { font-size: 12px; color: var(--green); font-weight: 600; margin-top: 4px; }
+
+  /* ─── Favorites ─── */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state p { font-size: 15px; }
+
+  /* ─── Modal ─── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; max-width: 480px; width: 100%; padding: 32px; transform: translateY(20px); transition: transform 0.3s; }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title { font-size: 20px; font-weight: 800; }
+  .modal-close { background: var(--surface2); border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 18px; color: var(--muted); display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .modal-close:hover { background: var(--surface3); color: var(--text); }
+  .modal-emoji { font-size: 64px; text-align: center; margin-bottom: 16px; }
+  .modal-section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin: 16px 0 8px; }
+  .ingredients-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .ingredients-list li { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+  .ingredients-list li::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+  .nutrition-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .nutrition-item { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 8px; text-align: center; }
+  .nutrition-val { font-size: 18px; font-weight: 800; color: var(--accent); }
+  .nutrition-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ─── Premium Modal ─── */
+  .premium-modal-banner { background: linear-gradient(135deg, #7c3aed, #06b6d4); border-radius: var(--radius); padding: 24px; text-align: center; margin-bottom: 20px; }
+  .premium-modal-banner h2 { font-size: 24px; font-weight: 800; color: white; margin-bottom: 6px; }
+  .premium-modal-banner p { font-size: 14px; color: rgba(255,255,255,0.8); }
+  .premium-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .premium-features li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .premium-features li::before { content: '✓'; color: var(--green); font-weight: 800; font-size: 16px; }
+  .price-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .price-card { flex: 1; background: var(--surface2); border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 14px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .price-card.selected { border-color: var(--accent); background: #a78bfa15; }
+  .price-card .price { font-size: 22px; font-weight: 800; color: var(--text); }
+  .price-card .period { font-size: 11px; color: var(--muted); }
+  .price-card .save { font-size: 10px; background: var(--green); color: #000; padding: 2px 8px; border-radius: 50px; font-weight: 700; margin-top: 4px; display: inline-block; }
+  .btn-upgrade { width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent3)); color: white; border: none; padding: 15px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-upgrade:hover { opacity: 0.88; }
+
+  /* ─── Toast ─── */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface2); border: 1px solid var(--border); border-radius: 50px; padding: 12px 24px; font-size: 14px; font-weight: 600; color: var(--text); z-index: 200; opacity: 0; transition: all 0.3s; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ─── Skeleton ─── */
+  .skeleton { background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
+  .skel-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; animation: fadeInUp 0.4s ease both; }
+  .skel-img { height: 160px; }
+  .skel-body { padding: 18px; }
+  .skel-line { height: 14px; border-radius: 6px; margin-bottom: 10px; }
+  .skel-line.short { width: 60%; }
+  .skel-line.med { width: 80%; }
+
+  .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: gap; gap: 12px; }
+  .results-title { font-size: 20px; font-weight: 800; }
+  .mood-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 50px; font-size: 13px; font-weight: 600; border: 1px solid; }
+
+  .no-mood { text-align: center; padding: 40px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted); font-size: 15px; }
+</style>
+</head>
+<body>
+
+<div class="bg-blob blob1"></div>
+<div class="bg-blob blob2"></div>
+<div class="bg-blob blob3"></div>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">🥗 MoodMeal AI</div>
+    <h1>Eat for How<br/>You Feel Today</h1>
+    <p>Tell us your mood and energy level — our AI crafts the perfect meal plan just for you.</p>
+  </div>
+
+  <!-- Premium Banner -->
+  <div class="premium-banner">
+    <div class="left">
+      <div class="premium-icon">✨</div>
+      <div class="premium-text">
+        <strong>Unlock Premium</strong>
+        <span>Full weekly plans, macros tracking, grocery lists & more</span>
+      </div>
+    </div>
+    <button class="btn-premium" onclick="openPremium()">Upgrade — $7.99/mo</button>
+  </div>
+
+  <!-- Mood Selection -->
+  <div class="section-label">How are you feeling right now?</div>
+  <div class="mood-grid">
+    <button class="mood-btn" data-mood="tired" onclick="selectMood(this)">
+      <span class="mood-emoji">😴</span>
+      <span class="mood-label">Tired</span>
+    </button>
+    <button class="mood-btn" data-mood="bloated" onclick="selectMood(this)">
+      <span class="mood-emoji">🤢</span>
+      <span class="mood-label">Bloated</span>
+    </button>
+    <button class="mood-btn" data-mood="sad" onclick="selectMood(this)">
+      <span class="mood-emoji">😔</span>
+      <span class="mood-label">Sad</span>
+    </button>
+    <button class="mood-btn" data-mood="energetic" onclick="selectMood(this)">
+      <span class="mood-emoji">⚡</span>
+      <span class="mood-label">Energetic</span>
+    </button>
+    <button class="mood-btn" data-mood="unmotivated" onclick="selectMood(this)">
+      <span class="mood-emoji">😑</span>
+      <span class="mood-label">Unmotivated</span>
+    </button>
+  </div>
+
+  <div class="cta-wrap">
+    <button class="btn-generate" id="genBtn" onclick="generateMeals()">
+      <div class="spinner"></div>
+      <span class="btn-text">✨ Generate My Meal Plan</span>
+    </button>
+  </div>
+
+  <!-- Results -->
+  <div id="results" style="display:none">
+    <div class="results-header">
+      <div class="results-title">Your Personalized Meals</div>
+      <div id="moodChip" class="mood-chip"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('suggestions',this)">Suggestions</button>
+      <button class="tab-btn" onclick="switchTab('daily',this)">Daily Plan</button>
+      <button class="tab-btn" onclick="switchTab('favorites',this)">Favorites ❤️</button>
+    </div>
+
+    <!-- Suggestions Tab -->
+    <div id="tab-suggestions">
+      <div class="meals-grid" id="mealsGrid"></div>
+    </div>
+
+    <!-- Daily Plan Tab -->
+    <div id="tab-daily" style="display:none">
+      <div class="daily-plan" id="dailyPlan"></div>
+    </div>
+
+    <!-- Favorites Tab -->
+    <div id="tab-favorites" style="display:none">
+      <div id="favoritesContainer"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Meal Detail Modal -->
+<div class="modal-overlay" id="mealModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Premium Modal -->
+<div class="modal-overlay" id="premiumModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Go Premium ✨</div>
+      <button class="modal-close" onclick="closePremium()">✕</button>
+    </div>
+    <div class="premium-modal-banner">
+      <h2>🌟 MoodMeal Premium</h2>
+      <p>Personalized nutrition that evolves with how you feel</p>
+    </div>
+    <ul class="premium-features">
+      <li>Full 7-day personalized meal plans</li>
+      <li>Detailed macro & calorie tracking</li>
+      <li>Auto-generated grocery lists</li>
+      <li>AI chef tips & ingredient swaps</li>
+      <li>Mood-to-nutrition correlation insights</li>
+      <li>Unlimited saved favorites & history</li>
+    </ul>
+    <div class="price-row">
+      <div class="price-card selected" onclick="selectPlan(this)">
+        <div class="price">$7.99</div>
+        <div class="period">per month</div>
+      </div>
+      <div class="price-card" onclick="selectPlan(this)">
+        <div class="price">$59.99</div>
+        <div class="period">per year</div>
+        <div class="save">Save 37%</div>
+      </div>
+    </div>
+    <button class="btn-upgrade" onclick="showToast('🎉 Welcome to Premium!'); closePremium()">Start 7-Day Free Trial →</button>
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px">No credit card required for trial. Cancel anytime.</p>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const MEALS = {
+  tired: [
+    {
+      name: "Iron-Boost Buddha Bowl", emoji: "🥣", badge: "⚡ Energy", color: "#fbbf24",
+      why: "Packed with <strong>iron & slow-release carbs</strong> — helps fight fatigue and keeps energy stable all afternoon.",
+      tags: ["High Iron", "~420 kcal", "30 min", "Vegan"],
+      ingredients: ["Quinoa", "Spinach", "Roasted chickpeas", "Pumpkin seeds", "Tahini dressing", "Lemon zest"],
+      nutrition: { cal: "420", prot: "18g", carbs: "52g", fat: "14g" },
+      steps: "Cook quinoa. Roast chickpeas at 200°C for 20 min. Assemble bowl with spinach, drizzle tahini + lemon."
+    },
+    {
+      name: "Banana Oat Power Smoothie", emoji: "🍌", badge: "🌙 Rest Recovery", color: "#fbbf24",
+      why: "Rich in <strong>magnesium & potassium</strong> — minerals that support muscle recovery and reduce physical fatigue.",
+      tags: ["Magnesium", "~310 kcal", "5 min", "Quick"],
+      ingredients: ["2 bananas", "Oats", "Almond butter", "Honey", "Oat milk", "Cinnamon"],
+      nutrition: { cal: "310", prot: "9g", carbs: "55g", fat: "8g" },
+      steps: "Blend all ingredients until smooth. Add ice for a colder version. Drink immediately."
+    },
+    {
+      name: "Salmon & Sweet Potato", emoji: "🍣", badge: "⚡ Energy", color: "#fbbf24",
+      why: "<strong>Omega-3 fatty acids</strong> in salmon reduce inflammation and the sweet potato provides clean, lasting energy.",
+      tags: ["Omega-3", "~540 kcal", "35 min", "Gluten-Free"],
+      ingredients: ["Salmon fillet", "Sweet potato", "Broccoli", "Olive oil", "Garlic", "Lemon"],
+      nutrition: { cal: "540", prot: "38g", carbs: "42g", fat: "22g" },
+      steps: "Roast sweet potato cubes. Pan-sear salmon 4 min per side. Steam broccoli. Plate with lemon drizzle."
+    }
+  ],
+  bloated: [
+    {
+      name: "Ginger Miso Soup", emoji: "🍵", badge: "🌿 Digestive", color: "#34d399",
+      why: "<strong>Ginger reduces bloating</strong> and miso provides beneficial gut probiotics to ease discomfort fast.",
+      tags: ["Probiotic", "~180 kcal", "15 min", "Low FODMAP"],
+      ingredients: ["Miso paste", "Fresh ginger", "Tofu", "Seaweed", "Green onion", "Dashi broth"],
+      nutrition: { cal: "180", prot: "12g", carbs: "14g", fat: "6g" },
+      steps: "Heat broth, dissolve miso paste. Add tofu cubes, grated ginger, seaweed. Serve hot with green onions."
+    },
+    {
+      name: "Fennel & Cucumber Salad", emoji: "🥗", badge: "💧 Light", color: "#34d399",
+      why: "<strong>Fennel is a natural carminative</strong> — it relieves gas and bloating within 30 minutes of eating.",
+      tags: ["Anti-bloat", "~160 kcal", "10 min", "Raw"],
+      ingredients: ["Fennel bulb", "Cucumber", "Mint leaves", "Lemon juice", "Olive oil", "Sea salt"],
+      nutrition: { cal: "160", prot: "3g", carbs: "18g", fat: "9g" },
+      steps: "Thinly slice fennel and cucumber. Toss with olive oil, lemon, torn mint. Season with sea salt."
+    },
+    {
+      name: "Papaya & Pineapple Bowl", emoji: "🍍", badge: "🌿 Enzyme Rich", color: "#34d399",
+      why: "<strong>Bromelain & papain enzymes</strong> in pineapple and papaya actively break down proteins and reduce bloating.",
+      tags: ["Digestive Enzymes", "~220 kcal", "5 min", "Vegan"],
+      ingredients: ["Papaya", "Pineapple", "Coconut yogurt", "Chia seeds", "Lime juice", "Mint"],
+      nutrition: { cal: "220", prot: "5g", carbs: "42g", fat: "4g" },
+      steps: "Cube papaya and pineapple. Top with coconut yogurt, chia seeds, squeeze of lime."
+    }
+  ],
+  sad: [
+    {
+      name: "Dark Chocolate Overnight Oats", emoji: "🍫", badge: "😊 Mood Boost", color: "#60a5fa",
+      why: "<strong>Dark chocolate triggers serotonin release</strong> while oats provide tryptophan for a genuine mood lift.",
+      tags: ["Serotonin", "~380 kcal", "5 min + overnight", "Comfort"],
+      ingredients: ["Rolled oats", "Oat milk", "Dark cacao powder", "Banana", "Honey", "Chia seeds"],
+      nutrition: { cal: "380", prot: "11g", carbs: "65g", fat: "9g" },
+      steps: "Mix oats, milk, cacao, chia. Refrigerate overnight. Top with banana slices and drizzle of honey."
+    },
+    {
+      name: "Warm Turmeric Lentil Soup", emoji: "🍲", badge: "🤗 Comfort", color: "#60a5fa",
+      why: "<strong>Turmeric contains curcumin</strong> — shown to reduce cortisol levels and improve mood in clinical studies.",
+      tags: ["Anti-anxiety", "~360 kcal", "40 min", "Vegan"],
+      ingredients: ["Red lentils", "Turmeric", "Coconut milk", "Ginger", "Tomatoes", "Cumin"],
+      nutrition: { cal: "360", prot: "18g", carbs: "50g", fat: "10g" },
+      steps: "Sauté onion, ginger. Add lentils, turmeric, tomatoes. Simmer 30 min. Stir in coconut milk."
+    },
+    {
+      name: "Walnut & Berry Yogurt Parfait", emoji: "🫐", badge: "🧠 Brain Food", color: "#60a5fa",
+      why: "<strong>Walnuts boost serotonin & dopamine</strong>. Blueberries reduce inflammation linked to depression.",
+      tags: ["Dopamine", "~290 kcal", "5 min", "No-Cook"],
+      ingredients: ["Greek yogurt", "Mixed berries", "Walnuts", "Flaxseeds", "Honey", "Vanilla"],
+      nutrition: { cal: "290", prot: "16g", carbs: "32g", fat: "11g" },
+      steps: "Layer yogurt with berries and crushed walnuts. Sprinkle flaxseeds, drizzle honey. Serve immediately."
+    }
+  ],
+  energetic: [
+    {
+      name: "High-Protein Chicken Rice Bowl", emoji: "🍗", badge: "💪 Gains", color: "#fb923c",
+      why: "<strong>45g of protein</strong> sustains your energy peak and helps muscle tissue while you ride the energy wave.",
+      tags: ["High Protein", "~580 kcal", "25 min", "Meal Prep"],
+      ingredients: ["Chicken breast", "Brown rice", "Edamame", "Avocado", "Soy sauce", "Sesame seeds"],
+      nutrition: { cal: "580", prot: "45g", carbs: "55g", fat: "18g" },
+      steps: "Grill chicken, slice. Cook brown rice. Assemble bowl, top with avocado, edamame, soy drizzle."
+    },
+    {
+      name: "Açai Performance Smoothie Bowl", emoji: "🫐", badge: "⚡ Peak Performance", color: "#fb923c",
+      why: "<strong>Açai antioxidants</strong> + banana electrolytes keep your energy high and prevent the mid-day crash.",
+      tags: ["Antioxidant", "~420 kcal", "10 min", "No Cook"],
+      ingredients: ["Açai pack", "Banana", "Whey protein", "Granola", "Coconut flakes", "Kiwi"],
+      nutrition: { cal: "420", prot: "22g", carbs: "60g", fat: "10g" },
+      steps: "Blend açai, banana, protein powder thick. Pour into bowl. Top with granola, coconut, sliced kiwi."
+    },
+    {
+      name: "Egg & Avocado Power Toast", emoji: "🥑", badge: "💥 Fuel Up", color: "#fb923c",
+      why: "<strong>Healthy fats from avocado</strong> and complete proteins from eggs keep your high-energy state going longer.",
+      tags: ["Complete Protein", "~390 kcal", "10 min", "Quick"],
+      ingredients: ["Sourdough bread", "2 eggs", "Avocado", "Cherry tomatoes", "Red pepper flakes", "Lemon"],
+      nutrition: { cal: "390", prot: "20g", carbs: "38g", fat: "19g" },
+      steps: "Toast sourdough. Poach or fry eggs. Smash avocado with lemon. Top with eggs, tomatoes, chili."
+    }
+  ],
+  unmotivated: [
+    {
+      name: "Spicy Korean Ramen Bowl", emoji: "🍜", badge: "🔥 Dopamine Hit", color: "#f472b6",
+      why: "<strong>Spice triggers dopamine release</strong> — the bold flavors snap you out of a mental slump immediately.",
+      tags: ["Dopamine", "~450 kcal", "20 min", "Bold Flavor"],
+      ingredients: ["Ramen noodles", "Gochujang paste", "Soft-boiled egg", "Bok choy", "Mushrooms", "Sesame oil"],
+      nutrition: { cal: "450", prot: "20g", carbs: "58g", fat: "14g" },
+      steps: "Boil noodles. Make broth with gochujang + sesame oil. Add mushrooms, bok choy. Top with soft egg."
+    },
+    {
+      name: "Pesto Pasta with Burrata", emoji: "🧀", badge: "✨ Treat Yourself", color: "#f472b6",
+      why: "<strong>Carbs boost serotonin quickly</strong> and the indulgent burrata makes this feel like a real reward.",
+      tags: ["Comfort Food", "~520 kcal", "20 min", "Comfort"],
+      ingredients: ["Pasta", "Basil pesto", "Burrata", "Cherry tomatoes", "Pine nuts", "Parmesan"],
+      nutrition: { cal: "520", prot: "22g", carbs: "62g", fat: "21g" },
+      steps: "Cook pasta al dente. Toss with pesto. Plate with burrata in center, roasted tomatoes, pine nuts."
+    },
+    {
+      name: "Loaded Veggie Quesadillas", emoji: "🫔", badge: "🎯 Quick Win", color: "#f472b6",
+      why: "<strong>Easy wins matter</strong> — this meal takes 10 min and the satisfying crunch boosts your mood and confidence.",
+      tags: ["Quick", "~430 kcal", "10 min", "Vegetarian"],
+      ingredients: ["Whole wheat tortillas", "Black beans", "Corn", "Cheddar", "Bell peppers", "Sour cream"],
+      nutrition: { cal: "430", prot: "18g", carbs: "52g", fat: "16g" },
+      steps: "Fill tortilla with beans, corn, peppers, cheese. Cook in pan 3 min each side. Serve with sour cream."
+    }
+  ]
+};
+
+const DAILY_PLAN = {
+  tired: [
+    { time: "Breakfast", emoji: "🍌", name: "Banana Oat Power Smoothie", desc: "Slow-release energy to start your day gently", cals: "310 kcal" },
+    { time: "Lunch", emoji: "🥣", name: "Iron-Boost Buddha Bowl", desc: "Mid-day iron replenishment to fight the slump", cals: "420 kcal" },
+    { time: "Snack", emoji: "🥜", name: "Almond & Dark Chocolate Bites", desc: "Magnesium boost for 3pm energy dip", cals: "180 kcal" },
+    { time: "Dinner", emoji: "🍣", name: "Salmon & Sweet Potato", desc: "Omega-3s for overnight recovery and deep sleep", cals: "540 kcal" }
+  ],
+  bloated: [
+    { time: "Breakfast", emoji: "🍍", name: "Papaya & Pineapple Bowl", desc: "Enzymes to kickstart gentle digestion", cals: "220 kcal" },
+    { time: "Lunch", emoji: "🥗", name: "Fennel & Cucumber Salad", desc: "Anti-bloat relief and hydration", cals: "160 kcal" },
+    { time: "Snack", emoji: "🫚", name: "Peppermint herbal tea + rice cake", desc: "Soothe the gut, zero irritants", cals: "80 kcal" },
+    { time: "Dinner", emoji: "🍵", name: "Ginger Miso Soup with tofu", desc: "Probiotics to restore gut balance overnight", cals: "180 kcal" }
+  ],
+  sad: [
+    { time: "Breakfast", emoji: "🍫", name: "Dark Chocolate Overnight Oats", desc: "Morning serotonin boost", cals: "380 kcal" },
+    { time: "Lunch", emoji: "🫐", name: "Walnut & Berry Yogurt Parfait", desc: "Brain-boosting nutrients mid-day", cals: "290 kcal" },
+    { time: "Snack", emoji: "🍊", name: "Orange slices + walnuts", desc: "Vitamin C + omega-3 mood support", cals: "160 kcal" },
+    { time: "Dinner", emoji: "🍲", name: "Warm Turmeric Lentil Soup", desc: "Curcumin to lower cortisol before sleep", cals: "360 kcal" }
+  ],
+  energetic: [
+    { time: "Breakfast", emoji: "🥑", name: "Egg & Avocado Power Toast", desc: "Fuel your morning momentum", cals: "390 kcal" },
+    { time: "Lunch", emoji: "🍗", name: "High-Protein Chicken Rice Bowl", desc: "Sustain your peak with clean protein", cals: "580 kcal" },
+    { time: "Snack", emoji: "🫐", name: "Açai Smoothie Shot", desc: "Antioxidant boost, no crash", cals: "140 kcal" },
+    { time: "Dinner", emoji: "🐟", name: "Grilled fish with quinoa tabbouleh", desc: "Replenish and recover post-activity", cals: "490 kcal" }
+  ],
+  unmotivated: [
+    { time: "Breakfast", emoji: "🍳", name: "Cheesy scrambled eggs + toast", desc: "Minimum effort, maximum comfort", cals: "350 kcal" },
+    { time: "Lunch", emoji: "🫔", name: "Loaded Veggie Quesadillas", desc: "Quick win — done in 10 minutes", cals: "430 kcal" },
+    { time: "Snack", emoji: "🍫", name: "Dark chocolate + espresso", desc: "The ultimate motivation hack", cals: "120 kcal" },
+    { time: "Dinner", emoji: "🍜", name: "Spicy Korean Ramen Bowl", desc: "Bold flavors to pull you out of the slump", cals: "450 kcal" }
+  ]
+};
+
+const MOOD_COLORS = {
+  tired: { color: "#fbbf24", label: "😴 Tired" },
+  bloated: { color: "#34d399", label: "🤢 Bloated" },
+  sad: { color: "#60a5fa", label: "😔 Sad" },
+  energetic: { color: "#fb923c", label: "⚡ Energetic" },
+  unmotivated: { color: "#f472b6", label: "😑 Unmotivated" }
+};
+
+let currentMood = null;
+let favorites = JSON.parse(localStorage.getItem('moodmeal_favs') || '[]');
+let activeTab = 'suggestions';
+
+function selectMood(el) {
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentMood = el.dataset.mood;
+}
+
+function generateMeals() {
+  if (!currentMood) {
+    showToast('👆 Please select a mood first!');
+    return;
+  }
+  const btn = document.getElementById('genBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('tab-suggestions').innerHTML = '';
+  document.getElementById('tab-daily').style.display = 'none';
+  document.getElementById('tab-favorites').style.display = 'none';
+  document.getElementById('tab-suggestions').style.display = 'block';
+
+  // Skeleton loaders
+  const grid = document.createElement('div');
+  grid.className = 'meals-grid';
+  grid.id = 'mealsGrid';
+  [1,2,3].forEach(() => {
+    grid.innerHTML += `<div class="skel-card"><div class="skel-img skeleton"></div><div class="skel-body"><div class="skel-line skeleton med"></div><div class="skel-line skeleton"></div><div class="skel-line skeleton short"></div></div></div>`;
+  });
+  document.getElementById('tab-suggestions').appendChild(grid);
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Update mood chip
+  const mc = MOOD_COLORS[currentMood];
+  document.getElementById('moodChip').innerHTML = `<span>${mc.label}</span>`;
+  document.getElementById('moodChip').style.cssText = `color:${mc.color};border-color:${mc.color}40;background:${mc.color}15`;
+
+  setTimeout(() => {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    renderMeals();
+    renderDailyPlan();
+  }, 1800);
+}
+
+function renderMeals() {
+  const meals = MEALS[currentMood];
+  const grid = document.getElementById('mealsGrid');
+  grid.innerHTML = '';
+  meals.forEach((meal, i) => {
+    const isFav = favorites.some(f => f.name === meal.name);
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.style.animationDelay = `${i * 0.1}s`;
+    card.innerHTML = `
+      <div class="meal-img-bg" style="background:${meal.color}18">
+        ${meal.emoji}
+        <div class="meal-badge" style="color:${meal.color}">${meal.badge}</div>
+      </div>
+      <div class="meal-body">
+        <div class="meal-name">${meal.name}</div>
+        <div class="meal-why">${meal.why}</div>
+        <div class="meal-meta">${meal.tags.map(t => `<span class="meal-tag">${t}</span>`).join('')}</div>
+        <div class="meal-actions">
+          <button class="btn-fav ${isFav?'saved':''}" onclick="toggleFav(${i}, this)" title="Save to favorites">${isFav?'❤️':'🤍'}</button>
+          <button class="btn-view" onclick="openMealModal(${i})">View Recipe →</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderDailyPlan() {
+  const plan = DAILY_PLAN[currentMood];
+  const container = document.getElementById('dailyPlan');
+  container.innerHTML = `<div style="margin-bottom:20px"><div class="section-label">Your ${MOOD_COLORS[currentMood].label} Day</div></div>` +
+    plan.map(row => `
+      <div class="plan-row">
+        <div class="plan-time">${row.time}</div>
+        <div class="plan-meal">
+          <div class="plan-meal-name">${row.name}</div>
+          <div class="plan-meal-desc">${row.desc}</div>
+          <div class="plan-cals">~${row.cals}</div>
+        </div>
+        <div class="plan-emoji">${row.emoji}</div>
+      </div>
+    `).join('');
+}
+
+function toggleFav(idx, btn) {
+  const meal = MEALS[currentMood][idx];
+  const existing = favorites.findIndex(f => f.name === meal.name);
+  if (existing >= 0) {
+    favorites.splice(existing, 1);
+    btn.textContent = '🤍';
+    btn.classList.remove('saved');
+    showToast('Removed from favorites');
+  } else {
+    favorites.push({ ...meal, mood: currentMood });
+    btn.textContent = '❤️';
+    btn.classList.add('saved');
+    showToast('❤️ Saved to favorites!');
+  }
+  localStorage.setItem('moodmeal_favs', JSON.stringify(favorites));
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  activeTab = tab;
+
+  document.getElementById('tab-suggestions').style.display = 'none';
+  document.getElementById('tab-daily').style.display = 'none';
+  document.getElementById('tab-favorites').style.display = 'none';
+
+  if (tab === 'favorites') {
+    renderFavorites();
+  }
+  document.getElementById(`tab-${tab}`).style.display = 'block';
+}
+
+function renderFavorites() {
+  const c = document.getElementById('favoritesContainer');
+  if (favorites.length === 0) {
+    c.innerHTML = `<div class="empty-state"><div class="icon">🤍</div><p>No favorites yet.<br/>Heart a meal to save it here!</p></div>`;
+    return;
+  }
+  const grid = document.createElement('div');
+  grid.className = 'meals-grid';
+  favorites.forEach((meal, i) => {
+    const mc = MOOD_COLORS[meal.mood];
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.style.animationDelay = `${i * 0.1}s`;
+    card.innerHTML = `
+      <div class="meal-img-bg" style="background:${meal.color}18">
+        ${meal.emoji}
+        <div class="meal-badge" style="color:${mc.color}">${mc.label}</div>
+      </div>
+      <div class="meal-body">
+        <div class="meal-name">${meal.name}</div>
+        <div class="meal-why">${meal.why}</div>
+        <div class="meal-meta">${meal.tags.map(t => `<span class="meal-tag">${t}</span>`).join('')}</div>
+        <div class="meal-actions">
+          <button class="btn-fav saved" onclick="removeFavByName('${meal.name}', this)">❤️</button>
+          <button class="btn-view" onclick="openFavModal(${i})">View Recipe →</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  c.innerHTML = '';
+  c.appendChild(grid);
+}
+
+function removeFavByName(name, btn) {
+  favorites = favorites.filter(f => f.name !== name);
+  localStorage.setItem('moodmeal_favs', JSON.stringify(favorites));
+  btn.closest('.meal-card').style.opacity = '0';
+  btn.closest('.meal-card').style.transform = 'scale(0.95)';
+  setTimeout(() => renderFavorites(), 300);
+  showToast('Removed from favorites');
+}
+
+function openMealModal(idx) {
+  const meal = MEALS[currentMood][idx];
+  showMealModal(meal);
+}
+
+function openFavModal(idx) {
+  const meal = favorites[idx];
+  showMealModal(meal);
+}
+
+function showMealModal(meal) {
+  document.getElementById('modalTitle').textContent = meal.name;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-emoji">${meal.emoji}</div>
+    <div class="meal-why">${meal.why}</div>
+    <div class="modal-section-title">🛒 Ingredients</div>
+    <ul class="ingredients-list">${meal.ingredients.map(i => `<li>${i}</li>`).join('')}</ul>
+    <div class="modal-section-title">📋 Method</div>
+    <p style="font-size:14px;color:var(--muted);line-height:1.7">${meal.steps}</p>
+    <div class="modal-section-title">📊 Nutrition</div>
+    <div class="nutrition-grid">
+      <div class="nutrition-item"><div class="nutrition-val">${meal.nutrition.cal}</div><div class="nutrition-lbl">Calories</div></div>
+      <div class="nutrition-item"><div class="nutrition-val">${meal.nutrition.prot}</div><div class="nutrition-lbl">Protein</div></div>
+      <div class="nutrition-item"><div class="nutrition-val">${meal.nutrition.carbs}</div><div class="nutrition-lbl">Carbs</div></div>
+      <div class="nutrition-item"><div class="nutrition-val">${meal.nutrition.fat}</div><div class="nutrition-lbl">Fat</div></div>
+    </div>
+  `;
+  document.getElementById('mealModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('mealModal').classList.remove('open'); }
+
+function openPremium() { document.getElementById('premiumModal').classList.add('open'); }
+function closePremium() { document.getElementById('premiumModal').classList.remove('open'); }
+
+function selectPlan(el) {
+  document.querySelectorAll('.price-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Close modals on overlay click
+document.getElementById('mealModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.getElementById('premiumModal').addEventListener('click', function(e) {
+  if (e.target === this) closePremium();
+});
+</script>
+</body>
+</html>
