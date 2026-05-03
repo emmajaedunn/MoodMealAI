@@ -259,17 +259,17 @@
     <p>Tell us your mood and energy level — our AI crafts the perfect meal plan just for you.</p>
   </div>
 
-  <!-- Premium Banner -->
-  <div class="premium-banner">
-    <div class="left">
-      <div class="premium-icon">✨</div>
-      <div class="premium-text">
-        <strong>Unlock Premium</strong>
-        <span>Full weekly plans, macros tracking, grocery lists & more</span>
-      </div>
+<!-- Premium Banner -->
+<div class="premium-banner">
+  <div class="left">
+    <div class="premium-icon">✨</div>
+    <div class="premium-text">
+      <strong>MoodMeal Premium (Coming Soon)</strong>
+      <span>Smart weekly plans, macros tracking, grocery lists & more</span>
     </div>
-    <button class="btn-premium" onclick="openPremium()">Upgrade — $7.99/mo</button>
   </div>
+  <button class="btn-premium" onclick="joinWaitlist()">Join Early Access →</button>
+</div>
 
   <!-- Mood Selection -->
   <div class="section-label">How are you feeling right now?</div>
@@ -350,13 +350,15 @@
 <div class="modal-overlay" id="premiumModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Go Premium ✨</div>
+      <div class="modal-title">MoodMeal Premium (Coming Soon) ✨</div>
       <button class="modal-close" onclick="closePremium()">✕</button>
     </div>
+
     <div class="premium-modal-banner">
       <h2>🌟 MoodMeal Premium</h2>
-      <p>Personalized nutrition that evolves with how you feel</p>
+      <p>Coming soon — personalized nutrition that evolves with how you feel</p>
     </div>
+
     <ul class="premium-features">
       <li>Full 7-day personalized meal plans</li>
       <li>Detailed macro & calorie tracking</li>
@@ -365,19 +367,26 @@
       <li>Mood-to-nutrition correlation insights</li>
       <li>Unlimited saved favorites & history</li>
     </ul>
+
     <div class="price-row">
-      <div class="price-card selected" onclick="selectPlan(this)">
+      <div class="price-card selected">
         <div class="price">$7.99</div>
         <div class="period">per month</div>
       </div>
-      <div class="price-card" onclick="selectPlan(this)">
+      <div class="price-card">
         <div class="price">$59.99</div>
         <div class="period">per year</div>
         <div class="save">Save 37%</div>
       </div>
     </div>
-    <button class="btn-upgrade" onclick="showToast('🎉 Welcome to Premium!'); closePremium()">Start 7-Day Free Trial →</button>
-    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px">No credit card required for trial. Cancel anytime.</p>
+
+    <button class="btn-upgrade" onclick="joinWaitlist()">
+      ✨ Join Early Access
+    </button>
+
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px">
+      Be the first to access Premium when it launches. No payment required.
+    </p>
   </div>
 </div>
 
@@ -767,12 +776,39 @@ function selectPlan(el) {
   el.classList.add('selected');
 }
 
+function joinWaitlist() {
+  const email = prompt("Enter your email for early access:");
+
+  if (!email) return; // user clicked cancel
+
+  // basic validation
+  const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  if (isValid) {
+    showToast("✨ You're on the early access list!");
+    closePremium();
+
+    // store locally (avoid duplicates)
+    let list = JSON.parse(localStorage.getItem("waitlist") || "[]");
+
+    if (!list.includes(email)) {
+      list.push(email);
+      localStorage.setItem("waitlist", JSON.stringify(list));
+    }
+
+  } else {
+    showToast("⚠️ Please enter a valid email");
+  }
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
+
+
 
 // Close modals on overlay click
 document.getElementById('mealModal').addEventListener('click', function(e) {
