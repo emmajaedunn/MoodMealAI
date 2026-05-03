@@ -1,7 +1,11 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head><base href="https://d16ilfvy4mv02r.cloudfront.net/workspaces/HN3H5OaPzQaVNzFaHjPvXYNc29kTtcT7/19a06010-220d-4d0b-b2d6-203123ecc40c/files/">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  emailjs.init("sF3qSlbxscn40MICX");
+</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MoodMeal AI</title>
@@ -779,26 +783,36 @@ function selectPlan(el) {
 function joinWaitlist() {
   const email = prompt("Enter your email for early access:");
 
-  if (!email) return; // user clicked cancel
+  if (!email) return;
 
   // basic validation
   const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  if (isValid) {
-    showToast("✨ You're on the early access list!");
-    closePremium();
-
-    // store locally (avoid duplicates)
-    let list = JSON.parse(localStorage.getItem("waitlist") || "[]");
-
-    if (!list.includes(email)) {
-      list.push(email);
-      localStorage.setItem("waitlist", JSON.stringify(list));
-    }
-
-  } else {
+  if (!isValid) {
     showToast("⚠️ Please enter a valid email");
+    return;
   }
+
+  // prevent duplicates (local backup tracking)
+  let list = JSON.parse(localStorage.getItem("waitlist") || "[]");
+
+  if (!list.includes(email)) {
+    list.push(email);
+    localStorage.setItem("waitlist", JSON.stringify(list));
+  }
+
+  // 1. Send USER email (welcome)
+  emailjs.send("service_pv0z98v", "template_0azecjq", {
+    user_email: email
+  });
+
+  // 2. Send ADMIN email (notification)
+  emailjs.send("service_pv0z98v", "template_s514kg8", {
+    user_email: email
+  });
+
+  showToast("✨ You're on the early access list!");
+  closePremium();
 }
 
 function showToast(msg) {
